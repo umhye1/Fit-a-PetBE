@@ -15,21 +15,24 @@ import java.time.LocalTime;
 @Entity
 public class WalkRecord {
 
-    // 이름 규칙 recordId로 바꾸고 싶은데 erd보고 쓰긴 함
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // 기본키 생성
-    private Integer record_id;
+    private Integer recordId;
 
-    private LocalDate walk_date;
-    private LocalTime walk_start;
-    private LocalTime walk_end;
+    private LocalDate walkDate;
+    private LocalTime walkStart;
+    private LocalTime walkEnd;
 
     private Float distance;
     private Integer rating;
     private String memo;
 
-    private Integer pet_id;
-    private Integer user_id;
+    private Integer petId;
+    private Integer userId;
+
+    // 위치 정보
+    private String Address;
 
     // 기본 생성자
     public WalkRecord (){}

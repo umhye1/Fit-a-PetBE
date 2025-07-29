@@ -23,5 +23,7 @@ public class WalkRecordResponseDTO {
 
     private Integer pet_id;
     private Integer user_id;
+    // 위치 정보
+    private String Address;
 
 }

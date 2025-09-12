@@ -36,7 +36,8 @@ public class MemberService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final MemberRepository memberRepository;
-    private final RefreshTokenService refreshTokenService;
+//    private final RefreshTokenService refreshTokenService;
+    private final RedisRefreshTokenService refreshTokenService;
 
     /**
      * 이메일로 인증 코드를 보내는 함수
@@ -149,10 +150,14 @@ public class MemberService {
         TokenDto tokens = jwtProvider.createToken(member);
 
         // 기존 리프레시 토큰 삭제
-        refreshTokenService.delete(tokens.refreshToken());
+//        refreshTokenService.delete(tokens.refreshToken());
+        refreshTokenService.delete(member.getId());
+
+        log.info("리프레시 토큰 저장: {}", tokens.refreshToken());
 
         // 새로운 리프레시 토큰 저장
-        refreshTokenService.save(tokens.refreshToken(), member);
+//        refreshTokenService.save(tokens.refreshToken(), member);
+        refreshTokenService.save(member.getId(), tokens.refreshToken());
 
         return LoginResponse.builder()
                 .id(member.getId())

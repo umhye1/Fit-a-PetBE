@@ -3,8 +3,9 @@ package hongik21.fit_a_pet.global.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hongik21.fit_a_pet.global.jwt.CustomAccessDeniedHandler;
 import hongik21.fit_a_pet.global.jwt.CustomAuthenticationEntryPoint;
-import hongik21.fit_a_pet.global.jwt.JwtFilter;
+//import hongik21.fit_a_pet.global.jwt.JwtFilter;
 import hongik21.fit_a_pet.global.jwt.JwtProvider;
+import hongik21.fit_a_pet.global.jwt.RedisJwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,7 +29,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtFilter jwtFilter;
+    private final RedisJwtFilter jwtFilter;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 

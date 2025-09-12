@@ -17,6 +17,7 @@ public enum CustomErrorCode {
 
     // 2000: Token Error
     WRONG_TOKEN(HttpStatus.UNAUTHORIZED, 2000, "유효하지 않은 토큰입니다."),
+    TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, 2001, "토큰이 존재하지 않습니다."),
 
     // 3000: Member Error
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, 3000, "유저를 찾지 못했습니다."),

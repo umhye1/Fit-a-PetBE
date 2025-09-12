@@ -1,6 +1,7 @@
 package hongik21.fit_a_pet.global.jwt;
 
 import hongik21.fit_a_pet.accounts.entity.Member;
+import hongik21.fit_a_pet.accounts.repository.MemberRepository;
 import hongik21.fit_a_pet.global.exception.ApplicationException;
 import hongik21.fit_a_pet.global.exception.CustomErrorCode;
 import io.jsonwebtoken.*;
@@ -16,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Optional;
 
 
 /// TODO : 토큰 재발급 함수
@@ -23,6 +25,8 @@ import java.util.Date;
 @Slf4j
 @Component
 public class JwtProvider {
+    private final MemberRepository memberRepository;
+
     @Value("${jwt.secret}")
     private String secret;
 
@@ -34,8 +38,13 @@ public class JwtProvider {
 
     private static SecretKey key;
 
+    public JwtProvider(MemberRepository memberRepository, MemberRepository memberRepository1) {
+        this.memberRepository = memberRepository1;
+    }
+
     @PostConstruct
     public void init() {
+
         key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -53,8 +62,8 @@ public class JwtProvider {
                 .setExpiration(new Date(now.getTime() + accessTokenExpiration))
                 .signWith(key)
                 .compact();
-
     }
+
 
     public String createRefreshToken(Member member) {
         Date now = new Date();
@@ -127,6 +136,11 @@ public class JwtProvider {
                 .build();
     }
 
+    /**
+     * 토큰에서 사용자 이메일을 가져옵니다.
+     * @param token
+     * @return
+     */
     public static String getEmail(String token) {
         return Jwts.parser()
                 .verifyWith(key)
@@ -136,8 +150,36 @@ public class JwtProvider {
                 .getSubject();
     }
 
-    public String reissueToken() {
+     /**
+     * 토큰에서 사용자 ID를 가져옵니다.
+     * @param token
+     * @return
+     */
+    public Long getMemberIdFromToken(String token) {
+        String email = getEmail(token);
+        Optional<Member> member = memberRepository.findByEmail(email);
+        return member.map(Member::getId)
+                .orElseThrow(() -> new ApplicationException(CustomErrorCode.MEMBER_NOT_FOUND));
+    }
 
+    /**
+     * 토큰의 남은 유효 시간을 밀리초 단위로 가져옵니다.
+     * @param token
+     * @return
+     */
+    public long getExpirationTime(String token) {
+        Date expiration = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getExpiration();
+        return expiration.getTime() - new Date().getTime();
+    }
+
+    public String reissueToken() {
         return "";
     }
+
+
 }

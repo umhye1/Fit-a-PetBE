@@ -8,6 +8,10 @@ import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(indexes = {
+    @Index(name = "idx_post_category_cursor", columnList = "post_category,post_date,post_id"),
+    @Index(name = "idx_post_cursor", columnList = "post_date,post_id")
+})
 @Getter
 @Setter
 @SuperBuilder
@@ -25,6 +29,9 @@ public abstract class  Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long postId;
+
+    @Column(name = "post_category", insertable = false, updatable = false)
+    private String category;
 
     private String postTitle;
 

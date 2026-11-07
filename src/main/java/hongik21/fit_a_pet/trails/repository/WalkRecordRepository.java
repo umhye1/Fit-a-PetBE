@@ -7,10 +7,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-public interface WalkRecordRepository extends JpaRepository<WalkRecord, Integer> {
+public interface WalkRecordRepository extends JpaRepository<WalkRecord, Long> {
 
     // 날짜 기준 월별 조회 - 날짜 범위
-    List<WalkRecord> findByWalkDateBetween(LocalDate startDate, LocalDate endDate);
+    List<WalkRecord> findByMemberIdEmailAndWalkDateBetween(String email, LocalDate startDate, LocalDate endDate);
 
     // 단건 조회
     Optional<WalkRecord> findByRecordIdAndMemberIdEmail(Long recordId, String email);

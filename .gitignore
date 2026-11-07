@@ -42,3 +42,11 @@ out/
 
 application-spring.properties
 .DS_Store
+# Reproducible test settings contain synthetic credentials only.
+!src/test/resources/application-test.properties
+__pycache__/
+
+# Detailed local investigation and security evidence remain local.
+/docs/experiments/
+/docs/hardening-plan.md
+/docs/security-implementation.md

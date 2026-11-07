@@ -61,9 +61,12 @@ public class PostController {
     }
 
     @GetMapping
-    public CommonResponse<List<PostListResponse>> listPosts(
-            @RequestParam(name = "categoryType",required = false) PostCategoryType categoryType) {
-        List<PostListResponse> posts = postService.listPost(categoryType);
+    public CommonResponse<PostPageResponse> listPosts(
+            @RequestParam(name = "categoryType",required = false) PostCategoryType categoryType,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime cursorDate,
+            @RequestParam(required = false) Long cursorId,
+            @RequestParam(defaultValue = "20") int size) {
+        PostPageResponse posts = postService.listPost(categoryType, cursorDate, cursorId, size);
 
         return CommonResponse.onSuccess(posts,"포스트 카테고리 조회에 성공했습니다.");
     }

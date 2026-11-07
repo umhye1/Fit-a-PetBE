@@ -23,12 +23,15 @@ public class WalkRecordService {
     // 생성자
     private final WalkRecordRepository repository;
     private final MemberRepository memberRepository;
+    private final hongik21.fit_a_pet.pets.repository.PetRepository petRepository;
 
     // 기능 1. 산책 기록 저장
     public WalkRecordSaveResponse register(String email, WalkRecordSaveRequest request) {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(()-> new ApplicationException(CustomErrorCode.MEMBER_NOT_FOUND));
 
+        if (request.getPetId() == null || !petRepository.existsByIdAndMember_Email(request.getPetId().longValue(), email))
+            throw new ApplicationException(CustomErrorCode.PET_NOT_FOUND);
         LocalTime walkStart = LocalTime.parse(request.getWalkStart());
         LocalTime walkEnd = LocalTime.parse(request.getWalkEnd());
         Duration duration = Duration.between(walkStart,walkEnd);
@@ -80,7 +83,7 @@ public class WalkRecordService {
                 .orElseThrow(()-> new ApplicationException(CustomErrorCode.TRAIL_NOT_FOUND));
 
         try{
-            return repository.findByWalkDateBetween(startDate, endDate)
+            return repository.findByMemberIdEmailAndWalkDateBetween(email, startDate, endDate)
                     .stream()
                     .map(r -> new WalkRecordMonthlyResponse(
                             r.getRecordId(),

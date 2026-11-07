@@ -78,8 +78,9 @@ public class PetService {
 
     // 특정 펫 정보 업데이트
     @Transactional
-    public PetInfo updatePet(Long petId, PetJoinRequest request) {
-        Pet pet = petRepository.getPetById(petId);
+    public PetInfo updatePet(Long petId, PetJoinRequest request, String email) {
+        Pet pet = petRepository.findByIdAndMember_Email(petId, email)
+                .orElseThrow(() -> new hongik21.fit_a_pet.global.exception.ApplicationException(hongik21.fit_a_pet.global.exception.CustomErrorCode.PET_NOT_FOUND));
         pet.setName(request.getName());
         pet.setAge(request.getAge());
         pet.setWeight(request.getWeight());

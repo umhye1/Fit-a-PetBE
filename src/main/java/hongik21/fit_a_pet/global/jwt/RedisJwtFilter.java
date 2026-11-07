@@ -1,52 +1,51 @@
 package hongik21.fit_a_pet.global.jwt;
 
+import hongik21.fit_a_pet.accounts.repository.RedisSessionStore;
 import hongik21.fit_a_pet.accounts.service.RedisRefreshTokenService;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import io.jsonwebtoken.*;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import java.io.IOException;
+import java.util.Set;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class RedisJwtFilter extends OncePerRequestFilter {
-
-    private final JwtProvider jwtProvider;
-    private final CustomMemberDetailsService memberDetailsService;
-    private final RedisRefreshTokenService redisRefreshTokenService;
-
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-        throws ServletException, IOException {
-
-    String token = jwtProvider.resolveToken(request);
-    if (token != null) {
-        // 토큰이 블랙리스트에 있는지 확인 (로그아웃 여부)
-        if(redisRefreshTokenService.isTokenBlacklisted(token)){
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "토큰이 로그아웃되었습니다.");
-            return;
+    private final JwtProvider jwt;
+    private final CustomMemberDetailsService members;
+    private final RedisRefreshTokenService blacklist;
+    private final RedisSessionStore sessions;
+    private static final Set<String> PUBLIC_POSTS = Set.of("/api/users/login", "/api/users/signup",
+            "/api/users/email", "/api/users/email/verify", "/api/auth/refresh", "/api/users/logout");
+    @Override protected boolean shouldNotFilter(HttpServletRequest r) {
+        return "POST".equals(r.getMethod()) && PUBLIC_POSTS.contains(r.getServletPath());
+    }
+    @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+        String token = jwt.resolveToken(request);
+        if (token != null) {
+            try {
+                Claims c = jwt.parse(token, "access");
+                if (!sessions.active(c.get("sid", String.class)) || blacklist.isTokenBlacklisted(token))
+                    throw new JwtException("Inactive session");
+                var user = members.loadUserByUsername(c.getSubject());
+                SecurityContextHolder.getContext().setAuthentication(
+                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+            } catch (JwtException | IllegalArgumentException | UsernameNotFoundException e) {
+                SecurityContextHolder.clearContext();
+                response.sendError(401, "Invalid credentials"); return;
+            } catch (DataAccessException e) {
+                SecurityContextHolder.clearContext();
+                response.sendError(503, "Authentication storage unavailable"); return;
+            }
         }
-
-        if (jwtProvider.validateAccessToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
-            SecurityContextHolder.getContext().setAuthentication(getAuthentication(token));
-        }
+        chain.doFilter(request, response);
     }
-    filterChain.doFilter(request, response);
-    }
-
-    private UsernamePasswordAuthenticationToken getAuthentication(String token) {
-        UserDetails userDetails = memberDetailsService.loadUserByUsername(JwtProvider.getEmail(token));
-        return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-    }
-
 }

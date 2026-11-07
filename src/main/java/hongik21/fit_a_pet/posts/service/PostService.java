@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final hongik21.fit_a_pet.posts.repository.PostPageQuery postPageQuery;
     private final MemberRepository memberRepository;
 
     // 1. 게시글 작성
@@ -159,31 +160,23 @@ public class PostService {
     }
 
 
-    // 5. 게시판 카테고리 조회
+    // Bounded key query followed by a bounded fetch join; no count query.
     @Transactional(readOnly = true)
-    public List<PostListResponse> listPost(PostCategoryType categoryType) {
-
-        List<Post> allPosts = postRepository.findAllWithMembers();
-
-        return allPosts.stream()
-                .filter(post -> {
-                    // null일 경우 모든 게시글을 포함
-                    if (categoryType == null) {
-                        return true;
-                    }
-                    if (categoryType == PostCategoryType.FREE) return post instanceof FreePost;
-                    if (categoryType == PostCategoryType.QUESTION) return post instanceof QuestionPost;
-                    if (categoryType == PostCategoryType.INFO) return post instanceof InfoPost;
-                    return false;
-                })
-                .map(post -> PostListResponse.builder()
-                        .postId(post.getPostId())
-                        .postTitle(post.getPostTitle())
-                        .postCategory(getPostCategoryType(post))
-                        .nickname(post.getMember().getNickname())
-                        .postDate(post.getPostDate())
-                        .build())
-                .collect(Collectors.toList());
+    public PostPageResponse listPost(PostCategoryType category, LocalDateTime cursorDate, Long cursorId, int size) {
+        if (size < 1 || size > 20 || (cursorDate == null) != (cursorId == null) || (cursorId != null && cursorId < 1))
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid cursor or size");
+        var keys = postPageQuery.findKeys(category, cursorDate, cursorId, size + 1);
+        boolean more = keys.size() > size;
+        var pageKeys = keys.subList(0, Math.min(size, keys.size()));
+        if (pageKeys.isEmpty()) return new PostPageResponse(List.of(), false, null, null);
+        var byId = postRepository.findPageWithMembers(pageKeys.stream().map(k -> k.postId()).toList())
+                .stream().collect(Collectors.toMap(Post::getPostId, p -> p));
+        List<PostListResponse> items = pageKeys.stream().map(k -> byId.get(k.postId()))
+                .filter(java.util.Objects::nonNull).map(post -> PostListResponse.builder()
+                        .postId(post.getPostId()).postTitle(post.getPostTitle()).postCategory(getPostCategoryType(post))
+                        .nickname(post.getMember().getNickname()).postDate(post.getPostDate()).build()).toList();
+        var last = more ? pageKeys.getLast() : null;
+        return new PostPageResponse(items, more, last == null ? null : last.postDate(), last == null ? null : last.postId());
     }
     private PostCategoryType getPostCategoryType(Post post) {
         if (post instanceof FreePost) {

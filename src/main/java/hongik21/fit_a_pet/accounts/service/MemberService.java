@@ -34,10 +34,10 @@ public class MemberService {
     private final JavaMailSender mailSender;
     private final VerificationCodeRepository verificationCodeRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final JwtProvider jwtProvider;
+    private final TokenService tokenService;
     private final MemberRepository memberRepository;
 //    private final RefreshTokenService refreshTokenService;
-    private final RedisRefreshTokenService refreshTokenService;
+
 
     /**
      * 이메일로 인증 코드를 보내는 함수
@@ -146,18 +146,7 @@ public class MemberService {
             throw new ApplicationException(CustomErrorCode.PASSWORD_NOT_MATCHED);
         }
 
-        // 액세스, 리프레시 토큰 발급
-        TokenDto tokens = jwtProvider.createToken(member);
-
-        // 기존 리프레시 토큰 삭제
-//        refreshTokenService.delete(tokens.refreshToken());
-        refreshTokenService.delete(member.getId());
-
-        log.info("리프레시 토큰 저장: {}", tokens.refreshToken());
-
-        // 새로운 리프레시 토큰 저장
-//        refreshTokenService.save(tokens.refreshToken(), member);
-        refreshTokenService.save(member.getId(), tokens.refreshToken());
+        TokenDto tokens = tokenService.login(member);
 
         return LoginResponse.builder()
                 .id(member.getId())
@@ -165,16 +154,6 @@ public class MemberService {
                 .refreshToken(tokens.refreshToken())
                 .build();
 
-    }
-
-    public void logout(String email) throws ApplicationException {
-
-        Long memberId = memberRepository.findByEmail(email)
-                .map(Member::getId)
-                .orElseThrow(()-> new ApplicationException(CustomErrorCode.MEMBER_NOT_FOUND));
-
-        // 토큰 무효화
-        refreshTokenService.delete(memberId);
     }
 
     public Member getMemberByEmail(String email) throws ApplicationException {

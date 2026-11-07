@@ -46,14 +46,7 @@ public class PetController {
     public CommonResponse<PetInfo> updatePet(@PathVariable("pet_id") Long pet_id, @RequestBody PetJoinRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
-        Member member = memberService.getMemberByEmail(email);
-        List<PetInfo> pets = petService.getPetsByMember(member);
-        boolean hasPet = pets.stream()
-                .anyMatch(pet -> pet.getId().equals(pet_id));
-        if (!hasPet) {
-            return CommonResponse.onFailure(null, CustomErrorCode.FORBIDDEN);
-        }
-        PetInfo response = petService.updatePet(pet_id, request);
+        PetInfo response = petService.updatePet(pet_id, request, email);
         return CommonResponse.onSuccess(response, "펫 편집 성공");
     }
 }

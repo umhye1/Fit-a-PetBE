@@ -33,6 +33,8 @@ public class PetPostService {
 
         Pet pet = petRepository.findByIdWithTraits(request.getPetId())
                 .orElseThrow(() -> new ApplicationException(CustomErrorCode.PET_NOT_FOUND));
+        if (!pet.getMember().getId().equals(member.getId()))
+            throw new ApplicationException(CustomErrorCode.PET_NOT_FOUND);
         PetPost post = PetPost.builder()
                 .member(member)
                 .pet(pet)
@@ -74,7 +76,7 @@ public class PetPostService {
 
     // 2. 수정
     public PetPostEditResponse editPetpost(PetPostEditRequest request, Long petPostId, String email){
-        PetPost post = petPostRepository.findByPetPostIdAndMemberId_Email(petPostId, email)
+        PetPost post = petPostRepository.findByPetPostIdAndMember_Email(petPostId, email)
                 .orElseThrow(()-> new ApplicationException(CustomErrorCode.PET_POST_NOT_FOUND));
 
         post.setPetPostTitle(request.getPetPostTitle());
@@ -148,7 +150,7 @@ public class PetPostService {
 
     // 4. 삭제
     public void deletePetpost(Long petPostId, String email) {
-        PetPost post = petPostRepository.findByPetPostIdAndMemberId_Email(petPostId,email)
+        PetPost post = petPostRepository.findByPetPostIdAndMember_Email(petPostId,email)
                 .orElseThrow(()-> new ApplicationException(CustomErrorCode.PET_POST_NOT_FOUND));
 
         try {

@@ -14,10 +14,11 @@ import java.util.Optional;
 public interface PetRepository extends JpaRepository<Pet, Long> {
     List<Pet> findByMember(Member member);
 
-    Pet getPetById(Long petId);
+    boolean existsByIdAndMember_Email(Long id, String email);
+    Optional<Pet> findByIdAndMember_Email(Long id, String email);
 
 
-    @Query("SELECT p FROM Pet p JOIN FETCH p.traits WHERE p.id = :id")
+    @Query("SELECT p FROM Pet p LEFT JOIN FETCH p.traits WHERE p.id = :id")
     Optional<Pet> findByIdWithTraits(@Param("id") Long id);
 
 }

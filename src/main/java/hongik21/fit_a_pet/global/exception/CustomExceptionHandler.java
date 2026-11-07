@@ -14,6 +14,15 @@ import java.util.stream.Collectors;
 @RestControllerAdvice(annotations = RestController.class)   // 해당 어노테이션의 모든 컨트롤러 대상
 public class CustomExceptionHandler {
 
+    @ExceptionHandler({io.jsonwebtoken.JwtException.class})
+    public ResponseEntity<?> invalidToken(Exception ex) {
+        return ResponseEntity.status(401).body(CommonResponse.onFailure(null, CustomErrorCode.WRONG_TOKEN));
+    }
+    @ExceptionHandler(org.springframework.dao.DataAccessException.class)
+    public ResponseEntity<?> storageUnavailable(Exception ex) {
+        return ResponseEntity.status(503).body(java.util.Map.of("statusCode",503,"message","Storage unavailable"));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<CommonResponse<?>> handleValidationException(MethodArgumentNotValidException ex) {
 

@@ -32,6 +32,9 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.testcontainers:junit-jupiter:1.21.3'
+	testImplementation 'org.testcontainers:mysql:1.21.3'
 
 	// Spring mail
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
@@ -51,11 +54,20 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:3.1.1')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 
-	// Redis
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 
 tasks.named('test') {
-	useJUnitPlatform()
+	useJUnitPlatform { excludeTags 'benchmark' }
+}
+
+// Explicit opt-in: starts only disposable containers and a loopback HTTP fixture.
+tasks.register('benchmarkServer', Test) {
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'benchmark' }
+    systemProperty 'benchmark.rows', project.findProperty('benchmarkRows') ?: '10000'
+    systemProperty 'benchmark.timeoutSeconds', project.findProperty('benchmarkTimeout') ?: '1200'
+    jvmArgs '-Xms256m', '-Xmx512m'
+    testLogging.showStandardStreams = true
 }

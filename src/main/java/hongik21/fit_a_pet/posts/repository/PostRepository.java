@@ -18,6 +18,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // 단건 조회
     Optional<Post> findByPostId(Long postId);
 
+    @Query("SELECT p FROM Post p JOIN FETCH p.member WHERE p.postId IN :ids")
+    List<Post> findPageWithMembers(@Param("ids") List<Long> ids);
+
     @Query("SELECT p FROM Post p JOIN FETCH p.member")
     List<Post> findAllWithMembers();
 
